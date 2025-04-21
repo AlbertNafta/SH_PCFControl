@@ -10,7 +10,8 @@
     "rebuild": "pcf-scripts rebuild",
     "start": "pcf-scripts start",
     "start:watch": "pcf-scripts start watch",
-    "refreshTypes": "pcf-scripts refreshTypes"
+    "refreshTypes": "pcf-scripts refreshTypes",
+    "start:all": "pcf-scripts build && pcf-scripts start watch"
   },
   "dependencies": {
     "react": "16.8.6",
