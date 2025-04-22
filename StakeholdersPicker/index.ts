@@ -4,6 +4,14 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { StakeholderManagement } from "./StakeholderManagement";
 
+// index.ts
+export * from "./StakeholderManagement";
+export * from "./components/types";
+export * from "./components/dataService";
+export * from "./components/stakeholderOperations";
+export * from "./components/SimplePagination";
+export * from "./components/StakeholderUI";
+export * from "./components/columnConfig";
 export class StakeholderManagementControl
     implements ComponentFramework.StandardControl<IInputs, IOutputs>
 {

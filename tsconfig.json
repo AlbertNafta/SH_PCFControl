@@ -9,7 +9,7 @@
         "StakeholdersPicker.tsx",   // thêm nếu chưa có
         "**/*.ts",
         "**/*.tsx"
-      ],
+, "StakeholdersPicker/components/columns.txs"      ],
     "rules": {
   "@typescript-eslint/no-explicit-any": "off"
 }
