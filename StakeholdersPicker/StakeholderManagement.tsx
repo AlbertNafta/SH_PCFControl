@@ -15,7 +15,9 @@ import { Checkbox } from "@fluentui/react/lib/Checkbox";
 import { MessageBar, MessageBarType } from "@fluentui/react/lib/MessageBar";
 import { Stack, IStackTokens } from "@fluentui/react/lib/Stack";
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
-import { mockStakeholders } from "./mockStakeholders";
+import { mockStakeholders } from "./mockData/mockStakeholders";
+import { mockRelationship } from "./mockData/mockRelationship";
+
 
 
 interface PaginationProps {
@@ -64,7 +66,7 @@ interface IStakeholder {
   stakeholderId: string;
   name: string;
   email: string;
-  company: string;
+  phone: string;
   role: string;
   isSelected: boolean;
 }
@@ -88,22 +90,10 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
   const [itemsPerPage] = useState<number>(5);
 
   // Selection for multi-select functionality
-  const selection = new Selection({
-    onSelectionChanged: () => {
-      const selectedItems = selection.getSelection() as IStakeholder[];
-      const updatedLinkedStakeholders = linkedStakeholders.map(
-        (stakeholder) => {
-          return {
-            ...stakeholder,
-            isSelected: selectedItems.some(
-              (item) => item.stakeholderId === stakeholder.stakeholderId
-            ),
-          };
-        }
-      );
-      setLinkedStakeholders(updatedLinkedStakeholders);
-    },
-  });
+  const addSelection = React.useRef<Selection>(new Selection()).current;
+
+
+  const selection = React.useRef<Selection>(new Selection()).current;
 
   const stackTokens: IStackTokens = { childrenGap: 10 };
 
@@ -115,6 +105,7 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
       minWidth: 40,
       maxWidth: 40,
       onRender: (item: IStakeholder) => <Checkbox checked={item.isSelected} />,
+      isMultiline: false,
     },
     {
       key: "name",
@@ -131,9 +122,9 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
       isResizable: true,
     },
     {
-      key: "company",
-      name: "Company",
-      fieldName: "company",
+      key: "phone",
+      name: "Phone",
+      fieldName: "phone",
       minWidth: 100,
       isResizable: true,
     },
@@ -146,7 +137,7 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
     },
   ];
   const useMockData = true;
- const allStakeholdersResponse = {
+  const allStakeholdersResponse = {
     entities: mockStakeholders
   };
 
@@ -172,7 +163,7 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
             stakeholderId: entity.cre97_stakeholderid,
             name: entity.cre97_name || "",
             email: entity.cre97_email || "",
-            company: entity.cre97_phone || "",
+            phone: entity.cre97_phone || "",
             role: entity.cre97_role || "",
             isSelected: false,
           })
@@ -182,22 +173,38 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
 
         // Load linked stakeholders for this opportunity
 
-        if (opportunityId) {
-          const relationshipName = "opportunity_contact"; // Update with your actual N:N relationship name
+        const opportunityId_mock = "0010";
+        //if (opportunityId) {
+        if (opportunityId_mock) {
+          // const relationshipName = "cre97_stakeholder_opportunity"; // Update with your actual N:N relationship name
 
-          const linkedResponse = await context.webAPI.retrieveMultipleRecords(
-            "cre97_stakeholder",
-            `?$select=cre97_stakeholderid,cre97_name,cre97_email,cre97_phone,cre97_role&$filter=opportunity_contact/any(o:o/opportunityid eq ${opportunityId})`
-          );
+          // const linkedResponse = await context.webAPI.retrieveMultipleRecords(
+          //   "cre97_stakeholder_opportunity",
+          //   `?$select=cre97_stakeholderid,opportunityid&$filter=cre97_stakeholder_opportunity/any(o:o/opportunityid eq ${opportunityId_mock})` //opportunityId
+          // );
 
-          const linkedData = linkedResponse.entities.map((entity) => ({
-            stakeholderId: entity.cre97_stakeholderid,
-            name: entity.cre97_name || "",
-            email: entity.cre97_email || "",
-            company: entity.cre97_phone || "",
-            role: entity.cre97_role || "",
-            isSelected: false,
-          }));
+          // const linkedData = linkedResponse.entities.map((entity) => ({
+          //   stakeholderId: entity.cre97_stakeholderid,
+          //   name: entity.cre97_name || "",
+          //   email: entity.cre97_email || "",
+          //   phone: entity.cre97_phone || "",
+          //   role: entity.cre97_role || "",
+          //   isSelected: false,
+          // }));
+          const linkedStakeholderIds = mockRelationship
+            .filter(rel => rel.opportunityid === opportunityId_mock)
+            .map(rel => rel.cre97_stakeholderid);
+
+          const linkedData = mockStakeholders
+            .filter(s => linkedStakeholderIds.includes(s.cre97_stakeholderid))
+            .map(s => ({
+              stakeholderId: s.cre97_stakeholderid,
+              name: s.cre97_name,
+              email: s.cre97_email,
+              phone: s.cre97_phone,
+              role: s.cre97_role,
+              isSelected: false,
+            }));
 
           setLinkedStakeholders(linkedData);
         }
@@ -213,17 +220,23 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
     loadData();
   }, [opportunityId, context.webAPI]);
 
-  // Filter stakeholders based on search text
+  // Filter stakeholders based on search text and linked stakeholder
   useEffect(() => {
-    const filtered = stakeholders.filter(
-      (stakeholder) =>
-        stakeholder.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        stakeholder.email.toLowerCase().includes(searchText.toLowerCase()) ||
-        stakeholder.company.toLowerCase().includes(searchText.toLowerCase())
-    );
+    const filtered = stakeholders
+      .filter(
+        (stakeholder) =>
+          stakeholder.name.toLowerCase().includes(searchText.toLowerCase()) ||
+          stakeholder.email.toLowerCase().includes(searchText.toLowerCase()) ||
+          stakeholder.phone.toLowerCase().includes(searchText.toLowerCase())
+      )
+      .filter(
+        (s) => !linkedStakeholders.some((l) => l.stakeholderId === s.stakeholderId)
+      );
+
     setFilteredStakeholders(filtered);
     setCurrentPage(1); // Reset to first page when search changes
-  }, [searchText, stakeholders]);
+  }, [searchText, stakeholders, linkedStakeholders]);
+
 
   // Handle search input change
   const handleSearchChange = (newValue?: string) => {
@@ -268,34 +281,74 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
       setIsLoading(false);
     }
   };
-
+  //data modify
   // Remove selected stakeholders from opportunity
+  // const removeSelectedStakeholders = async () => {
+  //   try {
+  //     const selectedStakeholders = linkedStakeholders.filter(
+  //       (s) => s.isSelected
+  //     );
+
+  //     if (selectedStakeholders.length === 0) {
+  //       setError("Please select at least one stakeholder to remove.");
+  //       return;
+  //     }
+
+  //     setIsLoading(true);
+
+  //     // Delete associations for all selected stakeholders
+  //     for (const stakeholder of selectedStakeholders) {
+  //       await context.webAPI.deleteRecord(
+  //         "opportunity_contact",
+  //         `(opportunityid=${opportunityId},cre97_stakeholderid=${stakeholder.stakeholderId})`
+  //       );
+  //     }
+
+  //     // Update state to remove the unlinked stakeholders
+  //     const updatedLinkedStakeholders = linkedStakeholders.filter(
+  //       (s) => !s.isSelected
+  //     );
+  //     setLinkedStakeholders(updatedLinkedStakeholders);
+  //     setError(null);
+  //     notifyOutputChanged();
+  //   } catch (error) {
+  //     console.error("Error removing stakeholders:", error);
+  //     setError("Failed to remove stakeholders. Please try again.");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  //linked stakeholder -> stakeholder
   const removeSelectedStakeholders = async () => {
     try {
-      const selectedStakeholders = linkedStakeholders.filter(
-        (s) => s.isSelected
-      );
+      const selected = selection.getSelection() as IStakeholder[];
 
-      if (selectedStakeholders.length === 0) {
+      if (selected.length === 0) {
         setError("Please select at least one stakeholder to remove.");
         return;
       }
 
       setIsLoading(true);
 
-      // Delete associations for all selected stakeholders
-      for (const stakeholder of selectedStakeholders) {
-        await context.webAPI.deleteRecord(
-          "opportunity_contact",
-          `(opportunityid=${opportunityId},cre97_stakeholderid=${stakeholder.stakeholderId})`
+      // Simulate disassociation by removing from mockRelationship
+      selected.forEach((s) => {
+        const index = mockRelationship.findIndex(
+          (rel) =>
+            rel.opportunityid === opportunityId_mock &&
+            rel.cre97_stakeholderid === s.stakeholderId
         );
-      }
+        if (index !== -1) {
+          mockRelationship.splice(index, 1);
+        }
+      });
 
-      // Update state to remove the unlinked stakeholders
-      const updatedLinkedStakeholders = linkedStakeholders.filter(
-        (s) => !s.isSelected
+      // Update linked list in state
+      const updated = linkedStakeholders.filter(
+        (s) => !selected.some(sel => sel.stakeholderId === s.stakeholderId)
       );
-      setLinkedStakeholders(updatedLinkedStakeholders);
+
+      setLinkedStakeholders(updated);
       setError(null);
       notifyOutputChanged();
     } catch (error) {
@@ -305,6 +358,53 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
       setIsLoading(false);
     }
   };
+
+
+  const opportunityId_mock = "0010"; // reuse your mock ID
+  //stakeholder -> linked stakeholder
+  const linkSelectedStakeholders = async () => {
+    try {
+      console.log("Add stakeholder is clicked");
+      const selectedToAdd = addSelection.getSelection() as IStakeholder[];
+      console.log(selectedToAdd);
+      if (selectedToAdd.length === 0) return;
+
+      setIsLoading(true);
+
+      const newLinked = selectedToAdd.map(s => ({
+        ...s,
+        isSelected: false,
+      }));
+      console.log("Add stakeholder is clicked 2");
+
+      // ✅ Simulate linking by updating mockRelationship
+      selectedToAdd.forEach((s) => {
+        const alreadyLinked = mockRelationship.some(
+          (rel) =>
+            rel.opportunityid === opportunityId_mock &&
+            rel.cre97_stakeholderid === s.stakeholderId
+        );
+
+        if (!alreadyLinked) {
+          mockRelationship.push({
+            opportunityid: opportunityId_mock,
+            cre97_stakeholderid: s.stakeholderId,
+          });
+        }
+      });
+
+      // Add to linked UI
+      setLinkedStakeholders((prev) => [...prev, ...newLinked]);
+      setError(null);
+      notifyOutputChanged();
+    } catch (err) {
+      console.error("Failed to link selected stakeholders", err);
+      setError("Failed to link selected stakeholders. Try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   // Calculate pagination
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -338,21 +438,23 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
           />
         ) : (
           <>
-            <DetailsList
-              items={linkedStakeholders}
-              columns={columns}
-              selection={selection}
-              selectionMode={SelectionMode.multiple}
-              selectionPreservedOnEmptyClick={true}
-              compact={true}
-            />
+            <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #eee", paddingRight: 8 }}>
+
+              <DetailsList
+                items={linkedStakeholders}
+                columns={columns.filter((col) => col.key !== "select")}
+                selection={selection}
+                selectionMode={SelectionMode.multiple}
+                compact={true}
+              />
+            </div>
 
             <PrimaryButton
               text="Remove Selected Stakeholders"
               onClick={removeSelectedStakeholders}
               disabled={
-                isLoading ||
-                linkedStakeholders.filter((s) => s.isSelected).length === 0
+                isLoading
+
               }
             />
           </>
@@ -360,7 +462,7 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
 
         <h2>Add Stakeholders</h2>
         <SearchBox
-          placeholder="Search stakeholders by name, email, or company"
+          placeholder="Search stakeholders by name, email, or phone"
           onChange={(_, newValue) => handleSearchChange(newValue)}
           value={searchText}
         />
@@ -375,10 +477,20 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
             <DetailsList
               items={currentItems}
               columns={columns.filter((col) => col.key !== "select")}
-              selectionMode={SelectionMode.none}
+              selectionMode={SelectionMode.multiple}
+              selection={addSelection}
+              selectionPreservedOnEmptyClick={true}
               compact={true}
               onItemInvoked={addStakeholder}
             />
+            <PrimaryButton
+              text="Link Selected Stakeholders"
+              onClick={linkSelectedStakeholders}
+              disabled={
+                isLoading
+              }
+            />
+
 
             {filteredStakeholders.length > itemsPerPage && (
               <SimplePagination

@@ -9,5 +9,8 @@
         "StakeholdersPicker.tsx",   // thêm nếu chưa có
         "**/*.ts",
         "**/*.tsx"
-      ]
+      ],
+    "rules": {
+  "@typescript-eslint/no-explicit-any": "off"
+}
 }
