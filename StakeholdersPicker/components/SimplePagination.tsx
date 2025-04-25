@@ -1,7 +1,7 @@
 // SimplePagination.tsx
 import * as React from "react";
-import { DefaultButton } from "@fluentui/react/lib/Button";
-import { Stack } from "@fluentui/react/lib/Stack";
+import { DefaultButton, Stack } from '@fluentui/react';
+
 import { PaginationProps } from "./types";
 
 export const SimplePagination: React.FC<PaginationProps> = ({

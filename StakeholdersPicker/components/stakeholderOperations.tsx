@@ -7,6 +7,7 @@ export class StakeholderOperations {
   constructor(
     private dataService: StakeholderDataService,
     private opportunityId: string,
+    private opportunityId_fake: string,
     private setIsLoading: (loading: boolean) => void,
     private setError: (error: string | null) => void,
     private notifyOutputChanged: () => void

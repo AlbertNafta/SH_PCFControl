@@ -5,12 +5,15 @@ import { IStakeholder } from "./types";
 
 export class StakeholderDataService {
   // Flag to use mock data instead of real API calls
-  private useMockData = true;
+
+  private useMockData = false;
   private opportunityId_mock = "0010";
 
-  constructor(private context: ComponentFramework.Context<any>) {}
+  constructor(private context: ComponentFramework.Context<any>) { }
 
   async loadAllStakeholders(searchText: string = ""): Promise<IStakeholder[]> {
+    console.log("StakeholderDataService");
+    console.log(this.useMockData);
     if (this.useMockData) {
       // Mock implementation
       const allStakeholdersResponse = {
@@ -28,12 +31,20 @@ export class StakeholderDataService {
         })
       );
     } else {
-      // Real implementation with API calls
       const allStakeholdersResponse = await this.context.webAPI.retrieveMultipleRecords(
         "cre97_stakeholder",
         "?$select=cre97_stakeholderid,cre97_name,cre97_email,cre97_phone,cre97_role&$filter=contains(cre97_name, '" + searchText + "')"
       );
+      try {
+        //debugging
+        const allStakeholdersResponse = await this.context.webAPI.retrieveRecord(
+          "cre97_stakeholder",
+          "?$select=cre97_stakeholderid,cre97_name,cre97_email,cre97_phone,cre97_role&$filter=contains(cre97_name, '" + searchText + "')"
+        );
+      } catch (error) {
+        console.error("Error loading data:", error);
 
+      }
       return allStakeholdersResponse.entities.map(
         (entity) => ({
           stakeholderId: entity.cre97_stakeholderid,
@@ -44,16 +55,23 @@ export class StakeholderDataService {
           isSelected: false,
         })
       );
+
+
     }
   }
 
   async loadLinkedStakeholders(opportunityId: string): Promise<IStakeholder[]> {
+    console.log("linked: opport:", opportunityId);
+    if (!opportunityId) {
+      console.warn("No opportunity ID provided");
+      return [];
+    }
     if (this.useMockData) {
       // Mock implementation
       const linkedStakeholderIds = mockRelationship
         .filter(rel => rel.opportunityid === this.opportunityId_mock)
         .map(rel => rel.cre97_stakeholderid);
-  
+
       const linkedData = mockStakeholders
         .filter(s => linkedStakeholderIds.includes(s.cre97_stakeholderid))
         .map(s => ({
@@ -64,27 +82,27 @@ export class StakeholderDataService {
           role: s.cre97_role,
           isSelected: false,
         }));
-  
+
       return linkedData;
     } else {
       // Real implementation with API calls
       try {
         // Bước 1: Lấy tất cả các liên kết N:N giữa opportunity và stakeholder
         const relationshipResponse = await this.context.webAPI.retrieveMultipleRecords(
-          "cre97_stakeholder_opportunity", // Tên thực thể liên kết N:N 
-          `?$select=cre97_stakeholderid,opportunityid&$filter=opportunityid eq '${opportunityId}'`
+          "nhan_stakeholder_opportunity", // Tên thực thể liên kết N:N 
+          `?$select=nhan_cre97_stakeholder,nhan_opportunity&$filter=nhan_opportunity eq '${opportunityId}'`
         );
-        
+
         // Lấy danh sách các ID stakeholder liên kết với opportunity này
         const stakeholderIds = relationshipResponse.entities.map(entity => entity.cre97_stakeholderid);
-        
+
         if (stakeholderIds.length === 0) {
           return []; // Không có stakeholder liên kết
         }
-        
+
         // Bước 2: Lấy thông tin chi tiết của từng stakeholder
         const linkedStakeholders: IStakeholder[] = [];
-        
+
         for (const id of stakeholderIds) {
           try {
             // Lấy thông tin chi tiết của stakeholder qua ID
@@ -93,7 +111,7 @@ export class StakeholderDataService {
               id,
               "?$select=cre97_stakeholderid,cre97_name,cre97_email,cre97_phone,cre97_role"
             );
-            
+
             // Thêm stakeholder vào danh sách kết quả
             linkedStakeholders.push({
               stakeholderId: stakeholderResponse.cre97_stakeholderid,
@@ -108,7 +126,7 @@ export class StakeholderDataService {
             // Tiếp tục với stakeholder tiếp theo nếu có lỗi
           }
         }
-        
+
         return linkedStakeholders;
       } catch (error) {
         console.error("Error retrieving linked stakeholders:", error);
@@ -125,14 +143,20 @@ export class StakeholderDataService {
         cre97_stakeholderid: stakeholder.stakeholderId,
       });
     } else {
-      // Create association between opportunity and stakeholder
-      await this.context.webAPI.createRecord("cre97_stakeholder_opportunity", {
-        opportunityid: { entityType: "opportunity", id: opportunityId },
-        cre97_stakeholderid: {
-          entityType: "contact",
-          id: stakeholder.stakeholderId,
-        },
-      });
+      try {
+        console.log("adding stakeholderrr");
+        console.log(opportunityId, " ", stakeholder);
+        
+        // Create the intersection record with the correct lookup reference format
+        await this.context.webAPI.createRecord("nhan_stakeholder_opportunity", {
+          "nhan_Opportunity@odata.bind": `/opportunities(${opportunityId})`,
+          "nhan_cre97_Stakeholder@odata.bind": `/cre97_stakeholders(${stakeholder.stakeholderId})`
+        });
+        
+      } catch (error) {
+        console.error("Error adding linked stakeholders add dataService:", error);
+        throw error;
+      }
     }
   }
 
@@ -150,8 +174,8 @@ export class StakeholderDataService {
     } else {
       // Delete the association record
       await this.context.webAPI.deleteRecord(
-        "cre97_stakeholder_opportunity",
-        `(opportunityid=${opportunityId},cre97_stakeholderid=${stakeholder.stakeholderId})`
+        "nhan_stakeholder_opportunity",
+        `(nhan_opportunity=${opportunityId},nhan_cre97_stakeholder=${stakeholder.stakeholderId})`
       );
     }
   }

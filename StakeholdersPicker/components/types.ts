@@ -11,6 +11,7 @@ export interface PaginationProps {
 export interface StakeholderManagementProps {
   context: ComponentFramework.Context<IInputs>;
   opportunityId: string;
+  opportunityId_fake: string;
   notifyOutputChanged: () => void;
 }
 

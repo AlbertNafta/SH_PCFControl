@@ -10,7 +10,7 @@ import { StakeholderOperations } from "./components/stakeholderOperations";
 export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
   props
 ) => {
-  const { context, opportunityId, notifyOutputChanged } = props;
+  const { context, opportunityId, opportunityId_fake,notifyOutputChanged } = props;
 
   const [stakeholders, setStakeholders] = useState<IStakeholder[]>([]);
   const [linkedStakeholders, setLinkedStakeholders] = useState<IStakeholder[]>(
@@ -34,6 +34,8 @@ export const StakeholderManagement: React.FC<StakeholderManagementProps> = (
   const stakeholderOps = new StakeholderOperations(
     dataService,
     opportunityId,
+     opportunityId_fake,
+
     setIsLoading,
     setError,
     notifyOutputChanged

@@ -1,7 +1,7 @@
 // index.ts - Main PCF Control file
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
 import * as React from "react";
-import * as ReactDOM from "react-dom";
+import * as ReactDOM from "react-dom/client";   
 import { StakeholderManagement } from "./StakeholderManagement";
 
 // index.ts
@@ -19,6 +19,8 @@ export class StakeholderManagementControl
     private notifyOutputChanged: () => void;
     private context: ComponentFramework.Context<IInputs>;
     private opportunityId: string;
+    private opportunityId_fake: string;
+    private root: ReactDOM.Root | null = null;
 
     public init(
         context: ComponentFramework.Context<IInputs>,
@@ -32,6 +34,7 @@ export class StakeholderManagementControl
 
         // Get the opportunity ID from the current record context
         const formContext = (context as any).page;
+        console.log(" this.container ", this.container )
         if (formContext && formContext.entityId) {
             this.opportunityId = formContext.entityId;
         } else {
@@ -49,13 +52,21 @@ export class StakeholderManagementControl
     }
 
     private renderControl(): void {
-        ReactDOM.render(
+        console.log("Rendercontrol");
+        
+        // React 18 way: Create root once if it doesn't exist
+        if (!this.root) {
+            this.root = ReactDOM.createRoot(this.container);
+        }
+        console.log("opprtunityID:",this.opportunityId)
+        // React 18 way: Use root.render instead of ReactDOM.render
+        this.root.render(
             React.createElement(StakeholderManagement, {
                 context: this.context,
                 opportunityId: this.opportunityId,
+                opportunityId_fake: this.opportunityId_fake,
                 notifyOutputChanged: this.notifyOutputChanged,
-            }),
-            this.container
+            })
         );
     }
 
@@ -64,6 +75,10 @@ export class StakeholderManagementControl
     }
 
     public destroy(): void {
-        ReactDOM.unmountComponentAtNode(this.container);
+        // React 18 way: Unmount using root.unmount()
+        if (this.root) {
+            this.root.unmount();
+            this.root = null;
+        }
     }
 }
