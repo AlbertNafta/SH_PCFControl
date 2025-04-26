@@ -11,7 +11,7 @@ export class StakeholderOperations {
     private setIsLoading: (loading: boolean) => void,
     private setError: (error: string | null) => void,
     private notifyOutputChanged: () => void
-  ) {}
+  ) { }
 
   async addStakeholderToOpportunity(
     stakeholder: IStakeholder,
@@ -25,14 +25,19 @@ export class StakeholderOperations {
           (s) => s.stakeholderId === stakeholder.stakeholderId
         )
       ) {
-        this.setError("This stakeholder is already linked to this opportunity.");
+        this.setError(
+          "This stakeholder is already linked to this opportunity."
+        );
         return;
       }
 
       this.setIsLoading(true);
 
       // Create association between opportunity and stakeholder
-      await this.dataService.addStakeholderToOpportunity(this.opportunityId, stakeholder);
+      await this.dataService.addStakeholderToOpportunity(
+        this.opportunityId,
+        stakeholder
+      );
 
       // Update state to include the newly linked stakeholder
       setLinkedStakeholders([
@@ -62,7 +67,7 @@ export class StakeholderOperations {
 
       this.setIsLoading(true);
 
-      const newLinked = selectedToAdd.map(s => ({
+      const newLinked = selectedToAdd.map((s) => ({
         ...s,
         isSelected: false,
       }));
@@ -70,11 +75,14 @@ export class StakeholderOperations {
 
       // Process each stakeholder
       for (const stakeholder of selectedToAdd) {
-        await this.dataService.addStakeholderToOpportunity(this.opportunityId, stakeholder);
+        await this.dataService.addStakeholderToOpportunity(
+          this.opportunityId,
+          stakeholder
+        );
       }
 
       // Add to linked UI with proper type for the updater function
-      setLinkedStakeholders(prev => [...prev, ...newLinked]);
+      setLinkedStakeholders((prev) => [...prev, ...newLinked]);
       this.setError(null);
       this.notifyOutputChanged();
     } catch (err) {
@@ -99,15 +107,22 @@ export class StakeholderOperations {
       }
 
       this.setIsLoading(true);
-
+      console.log("Selected ", selected)
       // Remove each selected stakeholder
       for (const stakeholder of selected) {
-        await this.dataService.removeStakeholderFromOpportunity(this.opportunityId, stakeholder);
+        console.log("Remove each selected ", this.opportunityId)
+        console.log("Remove each selected stakeholder: ", stakeholder)
+        console.log("removeStakeholderFromOpportunity method exists?", 
+  !!this.dataService.removeStakeholderFromOpportunity);
+        await this.dataService.removeStakeholderFromOpportunity(
+          this.opportunityId,
+          stakeholder
+        );
       }
 
       // Update linked list in state
       const updated = linkedStakeholders.filter(
-        (s) => !selected.some(sel => sel.stakeholderId === s.stakeholderId)
+        (s) => !selected.some((sel) => sel.stakeholderId === s.stakeholderId)
       );
 
       setLinkedStakeholders(updated);
