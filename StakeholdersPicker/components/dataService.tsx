@@ -180,12 +180,25 @@ export class StakeholderDataService {
     } else {
       try{
       // Delete the association record
-      console.log("opportunityId to delete: ",opportunityId)
-      console.log("stakeholder.stakeholderId to delete: ",stakeholder.stakeholderId)
-      await this.context.webAPI.deleteRecord(
-        "nhan_stakeholder_opportunity",
-        `(_nhan_opportunity_value='${opportunityId}',_nhan_cre97_stakeholder_value='${stakeholder.stakeholderId}')`
+      console.log("opportunityId to delete: ", opportunityId);
+      console.log("stakeholder.stakeholderId to delete: ", stakeholder.stakeholderId);
+      
+      //First find the relationship record, then delete it by ID
+      const relationshipRecords = await this.context.webAPI.retrieveMultipleRecords(
+        "nhan_stakeholder_opportunity", // Tên thực thể liên kết N:N 
+        `?$select=nhan_stakeholder_opportunityid,nhan_cre97_Stakeholder,nhan_Opportunity&$filter=_nhan_opportunity_value  eq '${opportunityId}'`
       );
+      console.log("relationshipRecords to delete:",relationshipRecords);
+      if (relationshipRecords.entities.length > 0) {
+        // Get the primary key of the relationship record
+        const relationshipId = relationshipRecords.entities[0].nhan_stakeholder_opportunityid;
+        // Delete the record using its primary key
+        console.log("relationshipId:",relationshipId);
+        await this.context.webAPI.deleteRecord("nhan_stakeholder_opportunity", relationshipId);
+        console.log("Relationship successfully deleted.");
+      } else {
+        console.log("No relationship record found to delete");
+      }
       }catch (error) {
         console.error("Error delete stakeholder  :", error);
         console.log("Error delete stakeholder  :", error);
