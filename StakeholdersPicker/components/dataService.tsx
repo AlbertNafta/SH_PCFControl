@@ -33,7 +33,7 @@ export class StakeholderDataService {
     } else {
       const allStakeholdersResponse = await this.context.webAPI.retrieveMultipleRecords(
         "cre97_stakeholder",
-        "?$select=cre97_stakeholderid,cre97_name,cre97_skateholdername,cre97_email,cre97_phone,cre97_role&$filter=contains(cre97_name, '" + searchText + "')"
+        "?$select=cre97_skateholdername,cre97_name,cre97_stakeholderid,cre97_email,cre97_phone,cre97_role&$filter=contains(cre97_name, '" + searchText + "')"
       );
       try {
         //debugging
@@ -45,16 +45,19 @@ export class StakeholderDataService {
         console.error("Error loading data:", error);
 
       }
-      return allStakeholdersResponse.entities.map(
-        (entity) => ({
-          stakeholderId: entity.cre97_stakeholderid,
-          name: entity.cre97_skateholdername || "",
-          email: entity.cre97_email || "",
-          phone: entity.cre97_phone || "",
-          role: entity.cre97_role || "",
-          isSelected: false,
-        })
-      );
+      return allStakeholdersResponse.entities
+      .map(entity => ({
+        stakeholderId: entity.cre97_stakeholderid,
+        name: entity.cre97_skateholdername || "",
+        email: entity.cre97_email || "",
+        phone: entity.cre97_phone || "",
+        role: entity.cre97_role || "",
+        isSelected: false,
+      }))
+      .sort((a, b) => {
+        // Sort by name (case-insensitive)
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+      });
 
 
     }
@@ -123,7 +126,11 @@ export class StakeholderDataService {
               email: stakeholderResponse.cre97_email || "",
               phone: stakeholderResponse.cre97_phone || "",
               role: stakeholderResponse.cre97_role || "",
-              isSelected: false
+              isSelected: false,
+              
+            });
+            linkedStakeholders.sort((a, b) => {
+              return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
             });
           } catch (error) {
             console.error(`Error retrieving stakeholder with ID ${id}:`, error);
