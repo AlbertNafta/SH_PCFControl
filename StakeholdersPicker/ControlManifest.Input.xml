@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="MyNamespace"
+           constructor="StakeholderManagementControl"
+           version="1.0.0"
+           display-name-key="Stakeholder Management"
+           description-key="Manages stakeholder relationships for opportunities"
+           control-type="standard">
+    <property name="opportunityId_fake"
+              display-name-key="Opportunity ID fake"
+              description-key="ID of the current opportunity"
+              of-type="SingleLine.Text"
+              usage="bound"
+              required="false" />
+    <property name="opportunityId"
+              display-name-key="Opportunity ID"
+              description-key="ID of the current opportunity"
+              of-type="SingleLine.Text"
+              usage="bound"
+              required="true" />
+
+    <!--  Web API permissions -->
+    <feature-usage>
+      <uses-feature name="WebAPI.retrieveMultipleRecords" required="true" />
+      <uses-feature name="WebAPI.createRecord" required="true" />
+      <uses-feature name="WebAPI.deleteRecord" required="true" />
+      <uses-feature name="WebAPI" required="true" />
+      <uses-feature name="Utility" required="true" />
+    </feature-usage>
+
+    <resources>
+      <code path="index.ts" order="1" />
+      <!-- <platform-library name="React" version="18.3.1" />
+      <platform-library name="Fluent" version="8.29.0" /> -->
+    </resources>
+  </control>
+</manifest>
